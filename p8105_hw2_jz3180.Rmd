@@ -15,7 +15,7 @@ library(readxl)
 Read the Mr. Trashwheel dataset.
 
 ```{r data cleaning}
-trashwheel_df =
+trashwheel_df <-
   read_xlsx("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx", 
     sheet = "Mr. Trash Wheel",
     range = cell_cols("A:N")) %>%
@@ -29,7 +29,7 @@ trashwheel_df =
 
 Read precipitation data.
 
-```{r}
+```{r precipitation tables}
 precip_2018 = 
   read_excel(
     "./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
@@ -51,59 +51,33 @@ precip_2017 =
   drop_na(month) %>%
   mutate(year = 2017) %>%
   relocate(year)
-```
 
-Now combine annual precipitation.
-
-```{r}
 month_df = 
   tibble(
-    month_num = 1:12,
+    month = 1:12,
     month_name = month.name
-  )
+  ) 
 
-#precip_df = bind_rows(precip_2018, precip_2017) 
-#left_join(precip_df, month_df, by = "month") 
+precip_df = bind_rows(precip_2018, precip_2017) 
+left_join(precip_df, month_df, by = "month") 
 ```
 
-This dataset contains information from the Mr. Trashwheel trash collector in Baltimore, Maryland. As trash enters the inner harbor, the trashwheel collects that trash, and stores it in a dumpster. The dataset contains information on year, month, and trash collected, including some specific types of trash. There are a total of `r ` rows in our final dataset. Additional data sheets include month precipitation data. 
+This dataset contains information from the Mr. Trashwheel trash collector in Baltimore, Maryland. As trash enters the inner harbor, the trashwheel collects that trash, and stores it in a dumpster. The dataset contains information on year, month, and trash collected, including some specific types of trash. There are a total of `r nrow(trashwheel_df)` rows or observations in our final dataset. Additional data sheets include month precipitation data. The total precipitation in 2018 was `r sum(precip_2018$total)` inches and there was a median of `r median(pull(trashwheel_df, sports_balls), year == 2017, na.rm = TRUE)` sports balls in a dumpster in 2017.
 
 ## Problem 2
 
-```{r}
-nyc_transit = read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
+```{r setup for nyc transit}
+nyc_transit <- read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names() %>%
   unite(route, route1, route2, route3, route4, route5, route6, route7, route8, route9, route10, route11, sep = "/", na.rm = TRUE) %>%
   select('line', 'station_name', 'station_latitude', 'station_longitude', 'route', 'entry', 'vending', 'entrance_type', 'ada') %>%
   mutate(entry = ifelse(entry == "YES", TRUE, FALSE))
 
-# dimensions of dataset
-nrow(nyc_transit)
-ncol(nyc_transit)
-
-# number of distinct stations
-select(nyc_transit, station_name, route) %>%
-  distinct() %>%
-  nrow()
-
-# number of stations that are ADA compliant
-select(nyc_transit, station_name, route, ada) %>%
-  distinct() %>%
-  filter(ada == TRUE) %>%
-  nrow()
-
-# number of entrances/exits without vending that allow entrance
-filter(nyc_transit, vending == "NO") %>%
-  filter(entry) %>%
-  nrow()
-
-# number of entrances/exits without vending
-filter(nyc_transit, vending == "NO") %>%
-  nrow()
-
 ```
 
-This dataset contains information about NYC's subway entrances and exits. Each row of the raw dataset refers to an individual station entrance or exit. The raw dataset includes columns for the division, line, station name, station longitude/latitude, routes, entrance type, whether entry was allowed, e
+This dataset contains information about NYC's subway entrances and exits. Each row of the raw dataset refers to an individual station entrance or exit. There are a total of `r  nrow(nyc_transit)` rows or individual station entrances/exits. The raw dataset includes `r ncol(nyc_transit)` columns that detail the line, station name, station longitude/latitude, routes, entrance type, whether entry was allowed, presence of ticket vending, and whether it was ADA compliant. The data has been cleaned, with extraneous variables omitted and the entry variable converted from character to a logical variable. The data is now fairly tidy, albeit with somewhat confusing variable names. There are `r select(nyc_transit, station_name, route) %>% distinct() %>% nrow()` distinct stations, with `r select(nyc_transit, station_name, route) %>% distinct() %>% dplyr::filter(grepl("A", route, fixed = TRUE)) %>% nrow()` stations specifically serving the A train, and `r select(nyc_transit, station_name, route, ada) %>% distinct() %>% dplyr::filter(grepl("A", route, fixed = TRUE)) %>% dplyr::filter(ada) %>% nrow()` of those stations are ADA compliant. However, there are `r select(nyc_transit, station_name, route, ada) %>% distinct() %>% dplyr::filter(ada) %>% nrow()` total ADA compliant stations. `r select(nyc_transit, station_name, route, vending, entry) %>% dplyr::filter(vending=="NO") %>% dplyr::filter(entry) %>% nrow() / select(nyc_transit, station_name, route, vending) %>% dplyr::filter(vending=="NO") %>% nrow()` of the station entrances/exits without vending allow entrance.
+
+## Problem 3
 
 ```{r}
 pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
