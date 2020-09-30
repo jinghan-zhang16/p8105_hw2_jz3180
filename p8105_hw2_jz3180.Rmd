@@ -66,6 +66,8 @@ This dataset contains information from the Mr. Trashwheel trash collector in Bal
 
 ## Problem 2
 
+Read and clean the data; retain line, station, name, station latitude / longitude, routes served, entry, vending, entrance type, and ADA compliance. Convert the entry variable from character (YES vs NO) to a logical variable (the ifelse or recode function may be useful). Reformat data so that route number and route name are distinct variables.
+
 ```{r setup for nyc transit}
 nyc_transit <- read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names() %>%
@@ -79,8 +81,16 @@ This dataset contains information about NYC's subway entrances and exits. Each r
 
 ## Problem 3
 
-```{r}
-pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
+First, clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+
+Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+
+Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+
+Join the datasets by merging snp into pols, and merging unemployment into the result.
+
+```{r setup for FiveThirtyEight data}
+pols_month <- read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
   janitor::clean_names() %>%
   separate(mon, c("year", "month", "day"), sep="-") %>%
   mutate(month = recode(month,
@@ -100,7 +110,7 @@ pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
   mutate(president = ifelse(prez_dem == 1, "dem", "gop")) %>%
   select(-day, -prez_gop, -prez_dem)
 
-snp = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
+snp <- read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
   janitor::clean_names() %>%
   separate(date, c("month", "day", "year"), sep="/") %>%
   mutate(month = recode(month,
@@ -119,7 +129,7 @@ snp = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
   )) %>%
   select(year, month, -day, close)
 
-employment = read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>%
+employment <- read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>%
   janitor::clean_names() %>%
   pivot_longer(!year, names_to = "month", values_to = "unemployment") %>%
   mutate(month = recode(month,
@@ -140,9 +150,12 @@ employment = read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>%
 merged = merge(pols_month, snp) %>%
   merge(employment)
 
-nrow(merged)
-ncol(merged)
-
 ```
 
-The first dataset gave the breakdown of political representatives in the senate, house, governor, and presidential positions by republican versus democratic party per month starting from 1947. The second dataset gave what appeared to be monthly market closing data starting from 2015 and then going back until 1950. The third dataset gave yearly unemployment data by month from 1948 to 2015. The final dataset consisted of 786 rows where each row was data for a month, starting from ___ and ending at ___. The data ___
+The first dataset pols_month has `r ncol(pols_month)` columns/variables, and `r nrow(pols_month)` rows/observations. It gives the breakdown of political representatives in the senate, house, governor, and presidential positions by republican versus democratic party per month starting from `r min(pull(pols_month, year))` to `r max(pull(pols_month, year))`. The actual variables are named `r colnames(pols_month)`.
+
+The second dataset snp has `r ncol(snp)` columns/variables, and `r nrow(snp)` rows/observations. It gives what appears to be monthly market closing data starting from `r max(pull(snp, year))` and then going back until `r min(pull(snp, year))`. The actual variables are named `r colnames(snp)`.
+
+The third dataset unemployment has `r ncol(employment)` columns/variables, and `r nrow(employment)` rows/observations. It gives yearly unemployment data by month from `r min(pull(employment, year))` to `r max(pull(employment, year))`. The actual variables are named `r colnames(employment)`.
+
+The final dataset merged consists of `r nrow(merged)` rows where each row is data for a month, starting from `r min(pull(merged, year))` and ending at `r max(pull(merged, year))`. The data has `r ncol(merged)` columns consisting of the variables: `r colnames(merged)`.
